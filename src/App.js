@@ -11,7 +11,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 // import firebase methods here
-import { doc, collection, addDoc, setDoc, getDocs, onSnapshot } from "firebase/firestore";
+import { doc, collection, addDoc, setDoc, getDocs, onSnapshot, deleteDoc } from "firebase/firestore";
 import { db } from "./firebaseInit";
 
 const reducer = (state, action) => {
@@ -81,8 +81,11 @@ function App() {
     toast.success("Expense added successfully.");
   };
 
-  const deleteExpense = (id) => {
-    dispatch({ type: "REMOVE_EXPENSE", payload: { id } });
+  const deleteExpense = async (id) => {
+    const docRef = doc(db, "expenses", id);
+    await deleteDoc(docRef);
+    // dispatch({ type: "REMOVE_EXPENSE", payload: { id } }); //this is now not needed as realtime synchornization is already done using snapshot method of firebase
+    toast.success("Expense deleted successfully.");
   };
 
   const resetExpenseToUpdate = () => {
