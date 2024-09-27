@@ -11,17 +11,17 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 // import firebase methods here
-import { doc, collection, addDoc, setDoc, getDocs } from "firebase/firestore";
+import { doc, collection, addDoc, setDoc, getDocs, onSnapshot } from "firebase/firestore";
 import { db } from "./firebaseInit";
 
 const reducer = (state, action) => {
   const { payload } = action;
   switch (action.type) {
-    // add cases to set retrived expenses to state here
-    case "RETRIVE_EXPENSES":
+    case "GET_EXPENSES": {
       return {
         expenses: payload.expenses
       };
+    }
     case "ADD_EXPENSE": {
       return {
         expenses: [payload.expense, ...state.expenses]
@@ -48,29 +48,32 @@ function App() {
   const [state, dispatch] = useReducer(reducer, { expenses: [] });
   const [expenseToUpdate, setExpenseToUpdate] = useState(null);
 
-  // create function to get expenses from firestore here
-  // use appropriate hook to get the expenses when app mounts
+  const getData = async () => {
+    // change this to retrive expenses from firestore in realtime
+    // const snapshot = await getDocs(collection(db, "expenses"));
+    // const expenses = snapshot.docs.map((doc) => ({
+    //   id: doc.id,
+    //   ...doc.data()
+    // }));
+    const unsub = onSnapshot(collection(db, "expenses"), (snapShot) => {
+      const expenses = snapShot.docs.map((doc) => {
+        return {
+          id: doc.id,
+          ...doc.data(),
+        }
+      })
+      dispatch({ type: "GET_EXPENSES", payload: { expenses } });
+      toast.success("Expenses retrived successfully.");
+    });
+  };
+
   useEffect(() => {
-    async function fetchData() {
-        const snapShot = await getDocs(collection(db, "expenses"));
-        const expenses = snapShot.docs.map((doc)=>{
-            return{
-                id: doc.id,
-                ...doc.data(),
-            }
-        })
-        dispatch({
-          type: "RETRIVE_EXPENSES",
-          payload: { expenses: expenses }
-        });
-    }
-    fetchData();
-}, [])
+    getData();
+  }, []);
 
   const addExpense = async (expense) => {
     const expenseRef = collection(db, "expenses");
     const docRef = await addDoc(expenseRef, expense);
-
     dispatch({
       type: "ADD_EXPENSE",
       payload: { expense: { id: docRef.id, ...expense } }
